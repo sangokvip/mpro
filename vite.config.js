@@ -7,5 +7,5 @@ export default defineConfig({
     port: 3000,
     open: true
   },
-  base: './'  // 确保在Vercel上静态资源路径正确
+  base: '/'  // 确保在Vercel上静态资源路径正确
 })
