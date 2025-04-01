@@ -183,16 +183,38 @@ function App() {
           scrollY: -window.scrollY,
           windowWidth: reportRef.current.scrollWidth,
           windowHeight: reportRef.current.scrollHeight,
-          scale: 2
+          scale: window.devicePixelRatio * 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff'
         })
-        const image = canvas.toDataURL('image/png')
-        const link = document.createElement('a')
-        link.href = image
-        link.download = '女M自评报告.png'
-        link.click()
-        setSnackbarMessage('报告已成功保存为图片！')
+        const image = canvas.toDataURL('image/png', 1.0)
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          const blob = await (await fetch(image)).blob()
+          if (navigator.share) {
+            await navigator.share({
+              files: [new File([blob], '女M自评报告.png', { type: 'image/png' })]
+            })
+            setSnackbarMessage('图片已准备好分享！')
+          } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = '女M自评报告.png'
+            link.click()
+            URL.revokeObjectURL(link.href)
+            setSnackbarMessage('报告已保存为高清图片！')
+          }
+        } else {
+          const link = document.createElement('a')
+          link.href = image
+          link.download = '女M自评报告.png'
+          link.click()
+          setSnackbarMessage('报告已保存为高清图片！')
+        }
         setSnackbarOpen(true)
       } catch (error) {
+        console.error('导出图片错误:', error)
         setSnackbarMessage('导出图片失败，请重试')
         setSnackbarOpen(true)
       }
@@ -376,14 +398,16 @@ function App() {
           </Box>
           <Grid container spacing={2} sx={{ mt: 0 }}>
           {items.map(item => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
+            <Grid item xs={6} sm={6} md={4} lg={3} key={item}>
               <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                p: { xs: 1.5, md: 2 },
+                p: { xs: 1, md: 2 },
                 borderRadius: 2,
                 height: '100%',
+                backgroundColor: 'background.paper',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   backgroundColor: 'rgba(98, 0, 234, 0.04)',
@@ -391,10 +415,15 @@ function App() {
                 },
               }}>
                 <Typography sx={{ 
-                  minWidth: { xs: 100, md: 120 }, 
+                  minWidth: { xs: 'auto', md: 120 }, 
+                  mr: 1,
                   fontWeight: 500, 
                   color: 'text.primary',
-                  fontSize: { xs: '0.9rem', md: '1rem' }
+                  fontSize: { xs: '0.85rem', md: '1rem' },
+                  flexShrink: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}>{item}</Typography>
                 <Select
                   size="small"
@@ -436,6 +465,13 @@ function App() {
       onClose={() => setOpenReport(false)}
       maxWidth="md"
       fullWidth
+      PaperProps={{
+        sx: {
+          minHeight: { xs: '90vh', md: 'auto' },
+          maxHeight: { xs: '90vh', md: '90vh' },
+          overflowY: 'auto'
+        }
+      }}
     >
       <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold' }}>
         女M自评详细报告
@@ -445,15 +481,31 @@ function App() {
           <Typography variant="h6" gutterBottom sx={{ color: 'primary.main' }}>
             总体评分分布
           </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
-            <RadarChart width={500} height={300} data={getRadarData()} style={{ margin: 'auto' }}>
+          <Box sx={{
+            width: '100%',
+            height: { xs: 280, sm: 300, md: 300 },
+            position: 'relative',
+            mb: 4
+          }}>
+            <RadarChart
+              width={window.innerWidth < 600 ? 300 : 500}
+              height={window.innerWidth < 600 ? 280 : 300}
+              data={getRadarData()}
+              style={{ margin: '0 auto' }}
+            >
               <PolarGrid stroke="#e0e0e0" />
-              <PolarAngleAxis dataKey="category" tick={{ fill: '#2c3e50', fontSize: 14 }} />
+              <PolarAngleAxis
+                dataKey="category"
+                tick={{
+                  fill: '#2c3e50',
+                  fontSize: window.innerWidth < 600 ? 12 : 14
+                }}
+              />
               <PolarRadiusAxis angle={30} domain={[0, 6]} tick={{ fill: '#2c3e50' }} />
               <Radar name="评分" dataKey="value" stroke="#6200ea" fill="#6200ea" fillOpacity={0.6} animationDuration={500} />
               <Radar name="满分" dataKey="fullMark" stroke="#ddd" strokeDasharray="3 3" fill="none" />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: window.innerWidth < 600 ? 12 : 14 }} />
             </RadarChart>
           </Box>
         </Box>
@@ -463,12 +515,30 @@ function App() {
               {category}
             </Typography>
             <Box sx={{ mb: 3 }}>
-              <BarChart 
-                width={800} 
-                height={300} 
-                data={getBarData(category)} 
-                margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
-              >
+              <Box sx={{
+                width: '100%',
+                height: { xs: 280, sm: 300, md: 300 },
+                position: 'relative',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                '&::-webkit-scrollbar': {
+                  height: '8px'
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: '#f1f1f1'
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: '#888',
+                  borderRadius: '4px'
+                }
+              }}>
+                <BarChart
+                  width={Math.max(window.innerWidth < 600 ? 600 : 800, getBarData(category).length * 60)}
+                  height={window.innerWidth < 600 ? 280 : 300}
+                  data={getBarData(category)}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
+                  style={{ margin: '0 auto' }}
+                >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
                 <XAxis 
                   dataKey="name" 
