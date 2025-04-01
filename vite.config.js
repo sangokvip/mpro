@@ -6,5 +6,14 @@ export default defineConfig({
   server: {
     port: 3000
   },
-  base: '/'  // 确保在Vercel上静态资源路径正确
+  base: '/',  // 确保在Vercel上静态资源路径正确
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  }
 })
