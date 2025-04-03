@@ -101,6 +101,17 @@ const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          '@media (max-width: 600px)': {  // 移动端样式
+            margin: '8px',
+            width: 'calc(100% - 16px)',
+            maxHeight: '90vh !important'
+          }
+        }
+      }
+    }
   },
 })
 
@@ -178,93 +189,59 @@ function App() {
     }))
   }
 
-  const handleExportImage = async () => {
-    if (!reportRef.current) return;
+ // 新增的移动端检测函数（放在组件顶部，App函数内部）
+const detectMobileOS = () => {
+  const ua = navigator.userAgent;
+  return {
+    isIOS: /iPhone|iPad|iPod/i.test(ua),
+    isAndroid: /Android/i.test(ua),
+    isWeChat: /MicroMessenger/i.test(ua)
+  };
+};
 
-    try {
-      // 优化canvas生成配置
-      const canvas = await html2canvas(reportRef.current, {
-        scrollY: -window.scrollY,
-        windowWidth: reportRef.current.scrollWidth,
-        windowHeight: reportRef.current.scrollHeight,
-        scale: window.devicePixelRatio * 2.5,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        imageTimeout: 15000, // 增加超时时间
-        onclone: (clonedDoc) => {
-          const element = clonedDoc.querySelector('[role="dialog"]');
-          if (element) {
-            element.style.transform = 'none';
-          }
-          // 确保所有图片都已加载
-          const images = clonedDoc.getElementsByTagName('img');
-          Array.from(images).forEach(img => {
-            if (!img.complete) {
-              throw new Error('图片未完全加载，请稍后重试');
-            }
-          });
-        }
-      });
+// 新增的微信预览函数（放在detectMobileOS下方）
+const createWeChatPreview = (imgUrl) => {
+  // ...保持之前提供的createWeChatPreview函数内容不变...
+};
 
-      const image = canvas.toDataURL('image/png', 1.0);
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+// 替换后的handleExportImage函数
+const handleExportImage = async () => {
+  if (!reportRef.current) return;
 
-      if (isMobile) {
-        try {
-          const response = await fetch(image);
-          if (!response.ok) throw new Error('图片数据获取失败');
-          
-          const blob = await response.blob();
-          const file = new File([blob], '女M自评报告.png', { type: 'image/png' });
-
-          // 优先使用Web Share API
-          if ('share' in navigator && 'canShare' in navigator && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file] });
-            setSnackbarMessage('图片已保存到相册！');
-            setSnackbarOpen(true);
-            return;
-          }
-
-          // 备用方案：使用download属性
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = '女M自评报告.png';
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-
-          setSnackbarMessage('图片已生成，请检查下载文件夹或相册！');
-        } catch (error) {
-          console.error('移动端保存图片失败:', error);
-          if (error.name === 'AbortError') {
-            setSnackbarMessage('用户取消了保存操作');
-          } else {
-            setSnackbarMessage('保存图片失败，请尝试截图保存或使用其他浏览器');
-          }
-        }
-      } else {
-        // 桌面端处理
-        const link = document.createElement('a');
-        link.href = image;
-        link.download = '女M自评报告.png';
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setSnackbarMessage('报告已保存为高清图片！');
+  try {
+    setSnackbarMessage('正在生成高清图片，请稍候...');
+    setSnackbarOpen(true);
+    
+    const canvas = await html2canvas(reportRef.current, {
+      scale: window.devicePixelRatio * 3,
+      useCORS: true,
+      logging: true,
+      backgroundColor: "#ffffff",
+      onclone: (clonedDoc) => {
+        clonedDoc.body.style.fontSize = '16px';
+        clonedDoc.body.style.webkitTextSizeAdjust = '100%';
       }
-      setSnackbarOpen(true);
-    } catch (error) {
-      console.error('导出图片错误:', error);
-      setSnackbarMessage(error.message || '导出图片失败，请重试');
-      setSnackbarOpen(true);
-    }
+    });
+    
+    canvas.toBlob(async (blob) => {
+      const { isIOS, isAndroid, isWeChat } = detectMobileOS();
+      
+      if (isWeChat) {
+        const imgUrl = canvas.toDataURL();
+        createWeChatPreview(imgUrl);
+        return;
+      }
+    
+      // ...保持之前提供的完整toBlob回调内容...
+    }, 'image/png');
+
+  } catch (error) {
+    console.error('导出失败:', error);
+    setSnackbarMessage(`保存失败: ${error.message || '未知错误'}`);
+  } finally {
+    setSnackbarOpen(true);
   }
+};
 
   const handleExportPDF = async () => {
     if (reportRef.current) {
@@ -362,14 +339,14 @@ function App() {
               >
                 随机选择
               </Button>
-
+    
               <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
                 <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
                 <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
                 <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
               </Box>
             </Box>
-
+    
             <IconButton
               color="inherit"
               sx={{ display: { xs: 'block', md: 'none' } }}
@@ -380,7 +357,7 @@ function App() {
           </Toolbar>
         </Container>
       </AppBar>
-
+    
       <Drawer
         anchor="right"
         open={mobileMenuOpen}
@@ -419,7 +396,7 @@ function App() {
           </List>
         </Box>
       </Drawer>
-
+    
       <Container maxWidth="lg" sx={{
         py: 8,
         minHeight: '100vh',
@@ -526,7 +503,7 @@ function App() {
             </Grid>
           </Paper>
         ))}
-
+    
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Button
             variant="contained"
@@ -538,7 +515,7 @@ function App() {
             生成报告
           </Button>
         </Box>
-
+    
         <Dialog
           open={openReport}
           onClose={() => setOpenReport(false)}
@@ -600,7 +577,7 @@ function App() {
                 }
                 return acc
               }, {})
-
+    
               return (
                 <Box key={category} sx={{ mb: 4, maxWidth: '100%' }}>
                   <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center' }}>
@@ -675,8 +652,10 @@ function App() {
               onClick={handleExportImage}
               variant="contained"
               color="primary"
+              disabled={snackbarOpen} // 新增的禁用状态
             >
-              保存为图片
+               {/* 修改后的动态文字显示 */}
+               {snackbarOpen ? '生成中...' : '保存为图片'}
             </Button>
             <Button
               onClick={handleExportPDF}
@@ -693,7 +672,7 @@ function App() {
             </Button>
           </DialogActions>
         </Dialog>
-
+    
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
