@@ -200,19 +200,28 @@ function App() {
         })
         const image = canvas.toDataURL('image/png', 1.0)
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          const blob = await (await fetch(image)).blob()
-          if (navigator.share) {
-            await navigator.share({
-              files: [new File([blob], '女M自评报告.png', { type: 'image/png' })]
-            })
-            setSnackbarMessage('图片已准备好分享！')
-          } else {
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = '女M自评报告.png'
-            link.click()
-            URL.revokeObjectURL(link.href)
-            setSnackbarMessage('报告已保存为高清图片！')
+          try {
+            const blob = await (await fetch(image)).blob()
+            if ('share' in navigator && 'canShare' in navigator) {
+              const file = new File([blob], '女M自评报告.png', { type: 'image/png' })
+              if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                  files: [file]
+                })
+                setSnackbarMessage('图片已保存到相册！')
+                return
+              }
+            }
+            // 如果Web Share API不可用或不支持文件分享，尝试其他方法
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = '女M自评报告.png'
+            a.click()
+            URL.revokeObjectURL(a.href)
+            setSnackbarMessage('图片已保存，请检查相册！')
+          } catch (error) {
+            console.error('保存图片失败:', error)
+            setSnackbarMessage('保存图片失败，请重试')
           }
         } else {
           const link = document.createElement('a')
@@ -298,10 +307,19 @@ function App() {
             }}>
               <ScienceIcon /> M-Profile Lab
             </Typography>
-            
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>              <Button
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
                 color="inherit"
+                size="large"
                 startIcon={<AutorenewIcon />}
+                sx={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.2)'
+                  },
+                  display: { xs: 'none', md: 'flex' }
+                }}
                 onClick={() => {
                   const newRatings = {};
                   Object.entries(CATEGORIES).forEach(([category, items]) => {
@@ -317,9 +335,12 @@ function App() {
               >
                 随机选择
               </Button>
-              <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
-              <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
-              <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
+
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+                <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
+                <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
+                <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
+              </Box>
             </Box>
 
             <IconButton
