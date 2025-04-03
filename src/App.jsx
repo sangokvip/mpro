@@ -179,63 +179,90 @@ function App() {
   }
 
   const handleExportImage = async () => {
-    if (reportRef.current) {
-      try {
-        const canvas = await html2canvas(reportRef.current, {
-          scrollY: -window.scrollY,
-          windowWidth: reportRef.current.scrollWidth,
-          windowHeight: reportRef.current.scrollHeight,
-          scale: window.devicePixelRatio * 2.5,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          imageTimeout: 0,
-          onclone: (clonedDoc) => {
-            const element = clonedDoc.querySelector('[role="dialog"]');
-            if (element) {
-              element.style.transform = 'none';
-            }
+    if (!reportRef.current) return;
+
+    try {
+      // 优化canvas生成配置
+      const canvas = await html2canvas(reportRef.current, {
+        scrollY: -window.scrollY,
+        windowWidth: reportRef.current.scrollWidth,
+        windowHeight: reportRef.current.scrollHeight,
+        scale: window.devicePixelRatio * 2.5,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        imageTimeout: 15000, // 增加超时时间
+        onclone: (clonedDoc) => {
+          const element = clonedDoc.querySelector('[role="dialog"]');
+          if (element) {
+            element.style.transform = 'none';
           }
-        })
-        const image = canvas.toDataURL('image/png', 1.0)
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          try {
-            const blob = await (await fetch(image)).blob()
-            if ('share' in navigator && 'canShare' in navigator) {
-              const file = new File([blob], '女M自评报告.png', { type: 'image/png' })
-              if (navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                  files: [file]
-                })
-                setSnackbarMessage('图片已保存到相册！')
-                return
-              }
+          // 确保所有图片都已加载
+          const images = clonedDoc.getElementsByTagName('img');
+          Array.from(images).forEach(img => {
+            if (!img.complete) {
+              throw new Error('图片未完全加载，请稍后重试');
             }
-            // 如果Web Share API不可用或不支持文件分享，尝试其他方法
-            const a = document.createElement('a')
-            a.href = URL.createObjectURL(blob)
-            a.download = '女M自评报告.png'
-            a.click()
-            URL.revokeObjectURL(a.href)
-            setSnackbarMessage('图片已保存，请检查相册！')
-          } catch (error) {
-            console.error('保存图片失败:', error)
-            setSnackbarMessage('保存图片失败，请重试')
-          }
-        } else {
-          const link = document.createElement('a')
-          link.href = image
-          link.download = '女M自评报告.png'
-          link.click()
-          setSnackbarMessage('报告已保存为高清图片！')
+          });
         }
-        setSnackbarOpen(true)
-      } catch (error) {
-        console.error('导出图片错误:', error)
-        setSnackbarMessage('导出图片失败，请重试')
-        setSnackbarOpen(true)
+      });
+
+      const image = canvas.toDataURL('image/png', 1.0);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        try {
+          const response = await fetch(image);
+          if (!response.ok) throw new Error('图片数据获取失败');
+          
+          const blob = await response.blob();
+          const file = new File([blob], '女M自评报告.png', { type: 'image/png' });
+
+          // 优先使用Web Share API
+          if ('share' in navigator && 'canShare' in navigator && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            setSnackbarMessage('图片已保存到相册！');
+            setSnackbarOpen(true);
+            return;
+          }
+
+          // 备用方案：使用download属性
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = '女M自评报告.png';
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+
+          setSnackbarMessage('图片已生成，请检查下载文件夹或相册！');
+        } catch (error) {
+          console.error('移动端保存图片失败:', error);
+          if (error.name === 'AbortError') {
+            setSnackbarMessage('用户取消了保存操作');
+          } else {
+            setSnackbarMessage('保存图片失败，请尝试截图保存或使用其他浏览器');
+          }
+        }
+      } else {
+        // 桌面端处理
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = '女M自评报告.png';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setSnackbarMessage('报告已保存为高清图片！');
       }
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('导出图片错误:', error);
+      setSnackbarMessage(error.message || '导出图片失败，请重试');
+      setSnackbarOpen(true);
     }
   }
 
