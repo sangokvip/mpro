@@ -123,6 +123,15 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedBatchRating, setSelectedBatchRating] = useState('')
   const reportRef = useRef(null)
+  
+   // 新增的移动端检测函数（放在组件顶部，App函数内部）
+  const detectMobileOS = () => {
+  const ua = navigator.userAgent;
+  return {
+    isIOS: /iPhone|iPad|iPod/i.test(ua),
+    isAndroid: /Android/i.test(ua),
+    isWeChat: /MicroMessenger/i.test(ua)
+  };
 
   const handleRatingChange = (category, item, value) => {
     setRatings(prev => ({
@@ -188,15 +197,6 @@ function App() {
       })()
     }))
   }
-
- // 新增的移动端检测函数（放在组件顶部，App函数内部）
-const detectMobileOS = () => {
-  const ua = navigator.userAgent;
-  return {
-    isIOS: /iPhone|iPad|iPod/i.test(ua),
-    isAndroid: /Android/i.test(ua),
-    isWeChat: /MicroMessenger/i.test(ua)
-  };
 };
 
 // 新增的微信预览函数（放在detectMobileOS下方）
@@ -584,7 +584,7 @@ const handleExportImage = async () => {
           fullWidth
           role="dialog"          // 新增
           aria-modal="true"     // 新增
-          disableAutoFocus      // 新增
+  disableAutoFocus      // 新增
           PaperProps={{
             sx: {
               minHeight: { xs: '95vh', md: 'auto' },
