@@ -8,6 +8,7 @@ import HomeIcon from '@mui/icons-material/Home'
 import InfoIcon from '@mui/icons-material/Info'
 import HelpIcon from '@mui/icons-material/Help'
 import MenuIcon from '@mui/icons-material/Menu'
+import AutorenewIcon from '@mui/icons-material/Autorenew'
 
 const RATING_OPTIONS = ['SSS', 'SS', 'S', 'Q', 'N', 'W']
 const CATEGORIES = {
@@ -298,7 +299,24 @@ function App() {
               <ScienceIcon /> M-Profile Lab
             </Typography>
             
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>              <Button
+                color="inherit"
+                startIcon={<AutorenewIcon />}
+                onClick={() => {
+                  const newRatings = {};
+                  Object.entries(CATEGORIES).forEach(([category, items]) => {
+                    items.forEach(item => {
+                      const randomIndex = Math.floor(Math.random() * RATING_OPTIONS.length);
+                      newRatings[`${category}-${item}`] = RATING_OPTIONS[randomIndex];
+                    });
+                  });
+                  setRatings(newRatings);
+                  setSnackbarMessage('已完成随机选择！');
+                  setSnackbarOpen(true);
+                }}
+              >
+                随机选择
+              </Button>
               <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
               <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
               <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
@@ -322,6 +340,22 @@ function App() {
       >
         <Box sx={{ width: 250, pt: 2 }}>
           <List>
+            <ListItem button onClick={() => {
+              const newRatings = {};
+              Object.entries(CATEGORIES).forEach(([category, items]) => {
+                items.forEach(item => {
+                  const randomIndex = Math.floor(Math.random() * RATING_OPTIONS.length);
+                  newRatings[`${category}-${item}`] = RATING_OPTIONS[randomIndex];
+                });
+              });
+              setRatings(newRatings);
+              setSnackbarMessage('已完成随机选择！');
+              setSnackbarOpen(true);
+              setMobileMenuOpen(false);
+            }}>
+              <ListItemIcon><AutorenewIcon /></ListItemIcon>
+              <ListItemText primary="随机选择" />
+            </ListItem>
             <ListItem button onClick={() => setMobileMenuOpen(false)}>
               <ListItemIcon><HomeIcon /></ListItemIcon>
               <ListItemText primary="首页" />
@@ -510,76 +544,43 @@ function App() {
                 </RadarChart>
               </Box>
             </Box>
-            {Object.entries(CATEGORIES).map(([category, items]) => (
-              <Box key={category} sx={{ mb: 4, maxWidth: '100%', overflow: 'hidden' }}>
-                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center' }}>
-                  {category}
-                </Typography>
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{
-                    width: '100%',
-                    height: { xs: 280, sm: 300, md: 300 },
-                    position: 'relative',
-                    overflowX: 'auto',
-                    overflowY: 'hidden',
-                    '&::-webkit-scrollbar': {
-                      height: '8px'
-                    },
-                    '&::-webkit-scrollbar-track': {
-                      backgroundColor: '#f1f1f1'
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                      backgroundColor: '#888',
-                      borderRadius: '4px'
-                    }
-                  }}>
-                    <BarChart
-                      width={Math.max(window.innerWidth < 600 ? 600 : 800, getBarData(category).length * 60)}
-                      height={window.innerWidth < 600 ? 280 : 300}
-                      data={getBarData(category)}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 65 }}
-                      style={{ margin: '0 auto' }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
-                      <XAxis 
-                        dataKey="name" 
-                        interval={0} 
-                        angle={-45} 
-                        textAnchor="end"
-                        height={60} 
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis 
-                        domain={[0, 6]} 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => {
-                          const ratings = ['', 'W', 'N', 'Q', 'S', 'SS', 'SSS']
-                          return ratings[value] || value
-                        }}
-                      />
-                      <Tooltip 
-                        formatter={(value) => {
-                          const ratings = ['未评分', 'W', 'N', 'Q', 'S', 'SS', 'SSS']
-                          return ratings[value]
-                        }}
-                      />
-                      <Legend />
-                      <Bar 
-                        dataKey="value" 
-                        fill="#6200ea"
-                        animationDuration={500}
-                        label={{
-                          position: 'top',
-                          formatter: (value) => {
-                            const ratings = ['未评分', 'W', 'N', 'Q', 'S', 'SS', 'SSS']
-                            return ratings[value]
-                          },
-                          fontSize: 12
-                        }}
-                      />
-                    </BarChart>
-                  </Box>
-                  <Grid container spacing={2}>
+            {Object.entries(CATEGORIES).map(([category, items]) => {
+              const ratingGroups = RATING_OPTIONS.reduce((acc, rating) => {
+                const itemsWithRating = items.filter(item => getRating(category, item) === rating)
+                if (itemsWithRating.length > 0) {
+                  acc[rating] = itemsWithRating
+                }
+                return acc
+              }, {})
+
+              return (
+                <Box key={category} sx={{ mb: 4, maxWidth: '100%' }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center' }}>
+                    {category}
+                  </Typography>
+                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 'bold', width: '100px' }}>评分</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold' }}>项目</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {Object.entries(ratingGroups).map(([rating, items]) => (
+                          <TableRow key={rating}>
+                            <TableCell sx={{ color: getRatingColor(rating), fontWeight: 'bold' }}>
+                              {rating}
+                            </TableCell>
+                            <TableCell>
+                              {items.join('、')}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  <Grid container spacing={2} sx={{ mt: 2 }}>
                     {items.map(item => (
                       <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
                         <Paper elevation={1} sx={{
@@ -618,8 +619,8 @@ function App() {
                     ))}
                   </Grid>
                 </Box>
-              </Box>
-            ))}
+              )
+            })}
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
             <Button
