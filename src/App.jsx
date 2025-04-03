@@ -205,9 +205,18 @@ const createWeChatPreview = (imgUrl) => {
 };
 
 // 替换后的handleExportImage函数
+const detectMobileOS = () => {
+  const ua = navigator.userAgent;
+  return {
+    isIOS: /iPhone|iPad|iPod/i.test(ua),
+    isAndroid: /Android/i.test(ua),
+    isWeChat: /MicroMessenger/i.test(ua)
+  };
+};
+
 const handleExportImage = async () => {
   if (!reportRef.current) return;
-
+  
   try {
     setSnackbarMessage('正在生成高清图片，请稍候...');
     setSnackbarOpen(true);
@@ -222,17 +231,69 @@ const handleExportImage = async () => {
         clonedDoc.body.style.webkitTextSizeAdjust = '100%';
       }
     });
-    
+
     canvas.toBlob(async (blob) => {
       const { isIOS, isAndroid, isWeChat } = detectMobileOS();
       
+      // 微信处理
       if (isWeChat) {
         const imgUrl = canvas.toDataURL();
-        createWeChatPreview(imgUrl);
+        const previewDiv = document.createElement('div');
+        previewDiv.style.cssText = `
+          position: fixed; top:0; left:0; 
+          width:100%; height:100%; 
+          background: rgba(0,0,0,0.9); 
+          z-index: 9999;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        `;
+        
+        const img = new Image();
+        img.src = imgUrl;
+        img.style.maxWidth = '90%';
+        img.style.maxHeight = '70%';
+        
+        const tip = document.createElement('div');
+        tip.textContent = '长按图片保存到相册';
+        tip.style.cssText = 'color:white; font-size:16px; margin-top:20px;';
+        
+        previewDiv.appendChild(img);
+        previewDiv.appendChild(tip);
+        document.body.appendChild(previewDiv);
+        
+        setSnackbarMessage('请长按图片选择保存到相册');
         return;
       }
-    
-      // ...保持之前提供的完整toBlob回调内容...
+
+      // iOS/Android处理
+      const imgUrl = URL.createObjectURL(blob);
+      if (isIOS) {
+        const newWindow = window.open();
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <body style="margin:0;background:#000;">
+              <img src="${imgUrl}" style="width:100%;" />
+              <div style="color:white;text-align:center;padding:10px;">
+                长按图片选择「保存图像」
+              </div>
+            </body>
+          </html>
+        `);
+        setSnackbarMessage('请在弹出窗口中长按保存');
+      } else {
+        const link = document.createElement('a');
+        link.href = imgUrl;
+        link.download = '女M自评报告.png';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setSnackbarMessage('图片已开始下载');
+      }
+
+      URL.revokeObjectURL(imgUrl);
     }, 'image/png');
 
   } catch (error) {
@@ -521,6 +582,9 @@ const handleExportImage = async () => {
           onClose={() => setOpenReport(false)}
           maxWidth="md"
           fullWidth
+          role="dialog"          // 新增
+          aria-modal="true"     // 新增
+          disableAutoFocus      // 新增
           PaperProps={{
             sx: {
               minHeight: { xs: '95vh', md: 'auto' },
