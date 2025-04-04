@@ -569,33 +569,38 @@ function App() {
             </Box>
             <Grid container spacing={2} sx={{ mt: 0, width: '100%', margin: 0 }}>
               {items.map(item => (
-                <Grid item xs={12} sm={6} md={4} key={item}>
+                <Grid item xs={4} sm={3} md={3} key={item}>
                   <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: { xs: 1.5, md: 2 },
+                    p: { xs: 0.75, md: 1.5 },
                     borderRadius: 2,
                     height: '100%',
                     backgroundColor: 'background.paper',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s ease',
+                    gap: 0.5,
                     '&:hover': {
                       backgroundColor: 'rgba(98, 0, 234, 0.04)',
                       transform: 'translateX(4px)'
                     },
                   }}>
+                    <Box sx={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexGrow: 1,
+                      minWidth: 0
+                    }}>
                     <Typography sx={{ 
-                      minWidth: { xs: 'auto', md: 120 }, 
-                      mr: 1,
                       fontWeight: 500, 
                       color: 'text.primary',
                       fontSize: { xs: '0.85rem', md: '1rem' },
-                      flexShrink: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }}>{item}</Typography>
+                    </Box>
                     <Select
                       size="small"
                       value={getRating(category, item)}
@@ -804,7 +809,7 @@ function App() {
                       return ratingOrder[getRating(category, a)] - ratingOrder[getRating(category, b)];
                     })
                     .map(item => (
-                    <Grid item xs={6} sm={4} key={item}>
+                    <Grid item xs={3} sm={3} key={item}>
                       <Paper elevation={1} sx={{
                         p: 1,
                         display: 'flex',
