@@ -569,18 +569,18 @@ function App() {
             </Box>
             <Grid container spacing={2} sx={{ mt: 0, width: '100%', margin: 0 }}>
               {items.map(item => (
-                <Grid item xs={4} sm={3} md={3} key={item}>
+                <Grid item xs={12} sm={6} md={4} key={item}>
                   <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: { xs: 0.75, md: 1.5 },
+                    p: { xs: 1, md: 1.5 },
                     borderRadius: 2,
                     height: '100%',
                     backgroundColor: 'background.paper',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s ease',
-                    gap: 0.5,
+                    gap: 1,
                     '&:hover': {
                       backgroundColor: 'rgba(98, 0, 234, 0.04)',
                       transform: 'translateX(4px)'
@@ -809,7 +809,7 @@ function App() {
                       return ratingOrder[getRating(category, a)] - ratingOrder[getRating(category, b)];
                     })
                     .map(item => (
-                    <Grid item xs={3} sm={3} key={item}>
+                    <Grid item xs={6} sm={4} key={item}>
                       <Paper elevation={1} sx={{
                         p: 1,
                         display: 'flex',
