@@ -197,12 +197,12 @@ function App() {
         const clonedReport = reportElement.cloneNode(true);
         container.appendChild(clonedReport);
 
-        // 修改导出图片的网格布局为每行4列
+        // 修改导出图片的网格布局为每行3列
         const optionsGrids = clonedReport.querySelectorAll('.options-grid');
         optionsGrids.forEach(grid => {
           grid.style.display = 'grid';
-          grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
-          grid.style.gap = '0.5rem';
+          grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+          grid.style.gap = '1rem';
           grid.style.width = '100%';
           grid.style.margin = '0 auto';
           // 确保每个选项有足够的空间
@@ -211,7 +211,12 @@ function App() {
             item.style.minWidth = '0';
             item.style.flexWrap = 'nowrap';
             item.style.overflow = 'hidden';
-            item.style.fontSize = '0.9em';
+            item.style.fontSize = '1.8em';
+            // 增大评分等级说明的字体
+            const ratingText = item.querySelector('.rating-text');
+            if (ratingText) {
+              ratingText.style.fontSize = '1.6em';
+            }
           });
         });
 
@@ -230,6 +235,18 @@ function App() {
           dialogElement.style.margin = '0';
           dialogElement.style.padding = '2rem';
           dialogElement.style.boxSizing = 'border-box';
+
+          // 增大标题字体
+          const titles = dialogElement.querySelectorAll('.section-title');
+          titles.forEach(title => {
+            title.style.fontSize = '2.2em';
+          });
+
+          // 增大图表字体
+          const charts = dialogElement.querySelectorAll('.recharts-text');
+          charts.forEach(text => {
+            text.style.fontSize = '1.6em';
+          });
         }
 
         // 确保所有图表都已渲染
