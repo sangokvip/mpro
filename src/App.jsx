@@ -184,9 +184,11 @@ function App() {
       try {
         const canvas = await html2canvas(reportRef.current, {
           scrollY: -window.scrollY,
-          windowWidth: reportRef.current.scrollWidth,
+          width: window.innerWidth <= 768 ? window.innerWidth : 800,
+          height: reportRef.current.scrollHeight,
+          windowWidth: window.innerWidth <= 768 ? window.innerWidth : 800,
           windowHeight: reportRef.current.scrollHeight,
-          scale: window.devicePixelRatio * 2.5,
+          scale: window.innerWidth <= 768 ? 1.5 : 1.8,
           useCORS: true,
           allowTaint: true,
           logging: false,
@@ -196,33 +198,71 @@ function App() {
             const element = clonedDoc.querySelector('[role="dialog"]');
             if (element) {
               element.style.transform = 'none';
+              element.style.height = 'auto';
+              element.style.maxHeight = 'none';
+              element.style.padding = window.innerWidth <= 768 ? '0.5rem' : '1.5rem';
             }
           }
         })
-        const image = canvas.toDataURL('image/png', 1.0)
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          const blob = await (await fetch(image)).blob()
-          if (navigator.share) {
-            await navigator.share({
-              files: [new File([blob], '女M自评报告.png', { type: 'image/png' })]
-            })
-            setSnackbarMessage('图片已准备好分享！')
-          } else {
+
+        // 将Canvas转换为Blob对象
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/png', 1.0)
+        })
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+        if (isMobile) {
+          try {
+            // 尝试使用Web Share API
+            if (navigator.share && navigator.canShare) {
+              const file = new File([blob], '女M自评报告.png', { type: 'image/png' })
+              const shareData = { files: [file] }
+              
+              if (navigator.canShare(shareData)) {
+                await navigator.share(shareData)
+                setSnackbarMessage('图片已准备好分享！')
+                setSnackbarOpen(true)
+                return
+              }
+            }
+
+            // 如果Web Share API不可用，尝试使用FileSaver API
+            if ('saveAs' in navigator) {
+              await navigator.saveAs(blob, '女M自评报告.png')
+              setSnackbarMessage('报告已保存到相册！')
+              setSnackbarOpen(true)
+              return
+            }
+
+            // 回退方案：使用传统的下载方法
+            const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
+            link.href = url
             link.download = '女M自评报告.png'
+            link.style.display = 'none'
+            document.body.appendChild(link)
             link.click()
-            URL.revokeObjectURL(link.href)
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
             setSnackbarMessage('报告已保存为高清图片！')
+            setSnackbarOpen(true)
+          } catch (error) {
+            console.error('保存图片错误:', error)
+            setSnackbarMessage('保存图片失败，请尝试使用系统自带的截图功能')
+            setSnackbarOpen(true)
           }
         } else {
+          // 桌面端使用传统下载方法
+          const url = URL.createObjectURL(blob)
           const link = document.createElement('a')
-          link.href = image
+          link.href = url
           link.download = '女M自评报告.png'
           link.click()
+          URL.revokeObjectURL(url)
           setSnackbarMessage('报告已保存为高清图片！')
+          setSnackbarOpen(true)
         }
-        setSnackbarOpen(true)
       } catch (error) {
         console.error('导出图片错误:', error)
         setSnackbarMessage('导出图片失败，请重试')
@@ -546,37 +586,45 @@ function App() {
         <Dialog
           open={openReport}
           onClose={() => setOpenReport(false)}
-          maxWidth="md"
+          maxWidth="sm"
           fullWidth
           PaperProps={{
             sx: {
               minHeight: { xs: '95vh', md: 'auto' },
               maxHeight: { xs: '95vh', md: '90vh' },
-              overflowY: 'auto',
-              m: { xs: 1, sm: 2 }
+              overflowY: 'visible',
+              m: { xs: 1, sm: 2 },
+              width: '100%',
+              maxWidth: { sm: '600px' },
+              mx: 'auto',
+              '@media print': {
+                height: 'auto',
+                maxHeight: 'none',
+                overflow: 'visible'
+              }
             }
           }}
         >
           <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', pt: { xs: 2, md: 3 } }}>
             女M自评详细报告
           </DialogTitle>
-          <DialogContent ref={reportRef} sx={{ px: { xs: 2, md: 3 }, py: 3 }}>
-            <Box sx={{ mb: 4, maxWidth: '100%', overflow: 'hidden' }}>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center' }}>
+          <DialogContent ref={reportRef} sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
+            <Box sx={{ mb: 3, maxWidth: '100%', overflow: 'hidden' }}>
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center', fontSize: { xs: '1rem', md: '1.1rem' } }}>
                 总体评分分布
               </Typography>
               <Box sx={{
                 width: '100%',
-                height: { xs: 280, sm: 300, md: 300 },
+                height: { xs: 220, sm: 240, md: 260 },
                 position: 'relative',
-                mb: 4,
+                mb: 2,
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center'
               }}>
                 <RadarChart
-                  width={window.innerWidth < 600 ? 280 : 500}
-                  height={window.innerWidth < 600 ? 260 : 300}
+                  width={window.innerWidth < 600 ? 220 : 400}
+                  height={window.innerWidth < 600 ? 200 : 240}
                   data={getRadarData()}
                   style={{ maxWidth: '100%' }}
                 >
@@ -585,117 +633,72 @@ function App() {
                     dataKey="category"
                     tick={{
                       fill: '#2c3e50',
-                      fontSize: window.innerWidth < 600 ? 10 : 14
+                      fontSize: window.innerWidth < 600 ? 9 : 12
                     }}
                   />
                   <PolarRadiusAxis angle={30} domain={[0, 6]} tick={{ fill: '#2c3e50' }} />
                   <Radar name="评分" dataKey="value" stroke="#6200ea" fill="#6200ea" fillOpacity={0.6} animationDuration={500} />
                   <Radar name="满分" dataKey="fullMark" stroke="#ddd" strokeDasharray="3 3" fill="none" />
                   <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: window.innerWidth < 600 ? 12 : 14 }} />
+                  <Legend wrapperStyle={{ fontSize: window.innerWidth < 600 ? 10 : 12 }} />
                 </RadarChart>
               </Box>
             </Box>
-            {Object.entries(CATEGORIES).map(([category, items]) => {
-              const ratingGroups = RATING_OPTIONS.reduce((acc, rating) => {
-                const itemsWithRating = items.filter(item => getRating(category, item) === rating)
-                if (itemsWithRating.length > 0) {
-                  acc[rating] = itemsWithRating
-                }
-                return acc
-              }, {})
-
-              return (
-                <Box key={category} sx={{ mb: 4, maxWidth: '100%' }}>
-                  <Typography variant="h6" gutterBottom sx={{ 
-                    color: 'primary.main', 
-                    textAlign: 'center',
-                    borderBottom: '2px solid #6200ea',
-                    pb: 1,
-                    mb: 2
-                  }}>
-                    {category}
-                  </Typography>
-                  <TableContainer component={Paper} sx={{ 
-                    mt: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    borderRadius: 2
-                  }}>
-                    <Table size="small">
-                      <TableBody>
-                        {RATING_OPTIONS.map(rating => {
-                          if (!ratingGroups[rating]) return null;
-                          return (
-                            <TableRow key={rating} sx={{
-                              backgroundColor: `${getRatingColor(rating)}10`,
-                              '&:hover': {
-                                backgroundColor: `${getRatingColor(rating)}20`
-                              }
-                            }}>
-                              <TableCell 
-                                sx={{ 
-                                  color: getRatingColor(rating), 
-                                  fontWeight: 'bold',
-                                  width: '100px',
-                                  borderLeft: `4px solid ${getRatingColor(rating)}`
-                                }}
-                              >
-                                {rating}
-                              </TableCell>
-                              <TableCell sx={{ 
-                                color: 'text.primary',
-                                fontSize: '0.95rem',
-                                lineHeight: 1.5
-                              }}>
-                                {ratingGroups[rating].join('、')}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  <Grid container spacing={2} sx={{ mt: 2 }}>
-                    {items.map(item => (
-                      <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
-                        <Paper elevation={1} sx={{
-                          p: 1.5,
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: 2,
-                          '&:hover': {
-                            backgroundColor: 'rgba(98, 0, 234, 0.04)'
-                          }
+            {Object.entries(CATEGORIES).map(([category, items]) => (
+              <Box key={category} sx={{ mb: 2, maxWidth: '100%' }}>
+                <Typography variant="h6" gutterBottom sx={{
+                  color: 'primary.main',
+                  textAlign: 'center',
+                  borderBottom: '2px solid #6200ea',
+                  pb: 0.5,
+                  mb: 1.5,
+                  fontSize: { xs: '1rem', md: '1.1rem' }
+                }}>
+                  {category}
+                </Typography>
+                <Grid container spacing={1.5} justifyContent="center">
+                  {items.filter(item => getRating(category, item)).map(item => (
+                    <Grid item xs={6} sm={4} key={item}>
+                      <Paper elevation={1} sx={{
+                        p: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 1,
+                        '&:hover': {
+                          backgroundColor: 'rgba(98, 0, 234, 0.04)'
+                        },
+                        backgroundColor: `${getRatingColor(getRating(category, item))}10`,
+                        borderLeft: `3px solid ${getRatingColor(getRating(category, item))}`
+                      }}>
+                        <Typography sx={{
+                          fontWeight: 500,
+                          color: 'text.primary',
+                          fontSize: { xs: '0.8rem', md: '0.85rem' }
                         }}>
-                          <Typography sx={{ 
-                            fontWeight: 500,
-                            color: 'text.primary',
-                            fontSize: '0.9rem'
-                          }}>
-                            {item}
-                          </Typography>
-                          <Box
-                            sx={{
-                              backgroundColor: getRatingColor(getRating(category, item)),
-                              color: '#fff',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              display: 'inline-block',
-                              fontWeight: 'bold',
-                              minWidth: '60px',
-                              textAlign: 'center'
-                            }}
-                          >
-                            {getRating(category, item) || '未评分'}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              );
-            })}
+                          {item}
+                        </Typography>
+                        <Box
+                          sx={{
+                            backgroundColor: getRatingColor(getRating(category, item)),
+                            color: '#fff',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            display: 'inline-block',
+                            fontWeight: 'bold',
+                            minWidth: '50px',
+                            textAlign: 'center',
+                            fontSize: { xs: '0.8rem', md: '0.85rem' }
+                          }}
+                        >
+                          {getRating(category, item)}
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            ))}
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
             <Button
