@@ -645,7 +645,7 @@ function App() {
             }}>
               扫码领取您的XP报告
             </Typography>
-            <Box component="img" src="/img/qrcode.png" alt="QR Code" sx={{
+            <Box component="img" src="https://raw.githubusercontent.com/m-profile/mproimg/refs/heads/main/qrcode.png" alt="QR Code" sx={{
               width: '200px',
               height: '200px',
               display: 'block',
@@ -854,7 +854,7 @@ function App() {
               backgroundColor: 'white',
               mt: 4
             }}>
-              <Box component="img" src="/img/qrcode.png" alt="QR Code" sx={{
+              <Box component="img" src="https://raw.githubusercontent.com/m-profile/mproimg/refs/heads/main/qrcode.png" alt="QR Code" sx={{
                 width: '200px',
                 height: '200px',
                 display: 'block',
