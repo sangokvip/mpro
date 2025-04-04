@@ -182,28 +182,59 @@ function App() {
   const handleExportImage = async () => {
     if (reportRef.current) {
       try {
-        const canvas = await html2canvas(reportRef.current, {
-          scrollY: -window.scrollY,
-          width: window.innerWidth <= 768 ? window.innerWidth : 800,
-          height: reportRef.current.scrollHeight,
-          windowWidth: window.innerWidth <= 768 ? window.innerWidth : 800,
-          windowHeight: reportRef.current.scrollHeight,
-          scale: window.innerWidth <= 768 ? 1.5 : 1.8,
+        const reportElement = reportRef.current;
+        
+        // 创建一个新的容器元素
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '-9999px';
+        container.style.width = '1200px'; // 固定宽度以确保一致的布局
+        container.style.backgroundColor = '#ffffff';
+        document.body.appendChild(container);
+
+        // 克隆报告元素
+        const clonedReport = reportElement.cloneNode(true);
+        container.appendChild(clonedReport);
+
+        // 预处理克隆的元素
+        const dialogElement = clonedReport.querySelector('[role="dialog"]');
+        if (dialogElement) {
+          dialogElement.style.position = 'relative';
+          dialogElement.style.transform = 'none';
+          dialogElement.style.top = '0';
+          dialogElement.style.left = '0';
+          dialogElement.style.width = '100%';
+          dialogElement.style.height = 'auto';
+          dialogElement.style.maxHeight = 'none';
+          dialogElement.style.overflow = 'visible';
+          dialogElement.style.display = 'block';
+          dialogElement.style.margin = '0';
+          dialogElement.style.padding = '2rem';
+          dialogElement.style.boxSizing = 'border-box';
+        }
+
+        // 确保所有图表都已渲染
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const canvas = await html2canvas(container, {
+          scale: 2,
           useCORS: true,
           allowTaint: true,
           logging: false,
           backgroundColor: '#ffffff',
           imageTimeout: 0,
           onclone: (clonedDoc) => {
-            const element = clonedDoc.querySelector('[role="dialog"]');
-            if (element) {
-              element.style.transform = 'none';
-              element.style.height = 'auto';
-              element.style.maxHeight = 'none';
-              element.style.padding = window.innerWidth <= 768 ? '0.5rem' : '1.5rem';
-            }
+            const charts = clonedDoc.querySelectorAll('.recharts-wrapper');
+            charts.forEach(chart => {
+              chart.style.width = '100%';
+              chart.style.height = 'auto';
+            });
           }
-        })
+        });
+
+        // 清理临时元素
+        document.body.removeChild(container);
 
         // 将Canvas转换为Blob对象
         const blob = await new Promise(resolve => {
@@ -323,10 +354,12 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+
       <AppBar position="sticky" sx={{
         background: 'linear-gradient(135deg, #6200ea 0%, #9d46ff 100%)',
         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
       }}>
+
         <Container maxWidth="lg">
           <Toolbar sx={{ 
             justifyContent: 'space-between', 
@@ -362,24 +395,7 @@ function App() {
               gap: 2,
               flex: '1 1 auto',
               justifyContent: 'flex-end'
-            }}>              <Button
-                color="inherit"
-                startIcon={<AutorenewIcon />}
-                onClick={() => {
-                  const newRatings = {};
-                  Object.entries(CATEGORIES).forEach(([category, items]) => {
-                    items.forEach(item => {
-                      const randomIndex = Math.floor(Math.random() * RATING_OPTIONS.length);
-                      newRatings[`${category}-${item}`] = RATING_OPTIONS[randomIndex];
-                    });
-                  });
-                  setRatings(newRatings);
-                  setSnackbarMessage('已完成随机选择！');
-                  setSnackbarOpen(true);
-                }}
-              >
-                随机选择
-              </Button>
+            }}>              
               <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
               <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
               <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
@@ -483,6 +499,39 @@ function App() {
               </Typography>
             </Box>
           </Paper>
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AutorenewIcon />}
+              sx={{
+                background: 'linear-gradient(135deg, #ff4081 0%, #ff79b0 100%)',
+                color: 'white',
+                padding: '12px 32px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #ff79b0 0%, #ff4081 100%)',
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
+                }
+              }}
+              onClick={() => {
+                const newRatings = {};
+                Object.entries(CATEGORIES).forEach(([category, items]) => {
+                  items.forEach(item => {
+                    const randomIndex = Math.floor(Math.random() * RATING_OPTIONS.length);
+                    newRatings[`${category}-${item}`] = RATING_OPTIONS[randomIndex];
+                  });
+                });
+                setRatings(newRatings);
+                setSnackbarMessage('已完成随机选择！');
+                setSnackbarOpen(true);
+              }}
+            >
+              随机选择
+            </Button>
+          </Box>
         </Box>
         
         {Object.entries(CATEGORIES).map(([category, items]) => (
@@ -518,9 +567,9 @@ function App() {
                 ))}
               </Select>
             </Box>
-            <Grid container spacing={2} sx={{ mt: 0 }}>
+            <Grid container spacing={2} sx={{ mt: 0, width: '100%', margin: 0 }}>
               {items.map(item => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
+                <Grid item xs={12} sm={6} md={4} key={item}>
                   <Box sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -571,7 +620,7 @@ function App() {
           </Paper>
         ))}
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 4, gap: 4 }}>
           <Button
             variant="contained"
             color="primary"
@@ -581,22 +630,45 @@ function App() {
           >
             生成报告
           </Button>
+          <Paper elevation={2} sx={{
+            p: 3,
+            borderRadius: 2,
+            textAlign: 'center',
+            maxWidth: 300,
+            mx: 'auto',
+            backgroundColor: 'white'
+          }}>
+            <Typography variant="subtitle1" sx={{
+              fontWeight: 'bold',
+              color: 'primary.main',
+              mb: 2
+            }}>
+              扫码领取您的XP报告
+            </Typography>
+            <Box component="img" src="/img/qrcode.png" alt="QR Code" sx={{
+              width: '200px',
+              height: '200px',
+              display: 'block',
+              margin: '0 auto'
+            }} />
+          </Paper>
         </Box>
 
         <Dialog
           open={openReport}
           onClose={() => setOpenReport(false)}
-          maxWidth="sm"
+          maxWidth="md"
           fullWidth
           PaperProps={{
             sx: {
               minHeight: { xs: '95vh', md: 'auto' },
               maxHeight: { xs: '95vh', md: '90vh' },
-              overflowY: 'visible',
+              overflowY: 'auto',
               m: { xs: 1, sm: 2 },
               width: '100%',
-              maxWidth: { sm: '600px' },
+              maxWidth: { sm: '800px' },
               mx: 'auto',
+              backgroundColor: '#fafafa',
               '@media print': {
                 height: 'auto',
                 maxHeight: 'none',
@@ -605,28 +677,57 @@ function App() {
             }
           }}
         >
-          <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold', pt: { xs: 2, md: 3 } }}>
+          <DialogTitle sx={{ 
+            textAlign: 'center', 
+            fontWeight: 'bold', 
+            pt: { xs: 4, md: 5 },
+            mt: { xs: 2, md: 3 },
+            color: 'primary.main',
+            borderBottom: '2px solid #6200ea',
+            mb: 2
+          }}>
             女M自评详细报告
           </DialogTitle>
-          <DialogContent ref={reportRef} sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
-            <Box sx={{ mb: 3, maxWidth: '100%', overflow: 'hidden' }}>
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center', fontSize: { xs: '1rem', md: '1.1rem' } }}>
+          <DialogContent ref={reportRef} sx={{ 
+            px: 4, 
+            py: 3,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            '@media print': {
+              overflow: 'visible',
+              height: 'auto'
+            }
+          }}>
+            <Box sx={{ maxWidth: '100%', overflow: 'hidden' }}>
+              <Typography variant="h6" gutterBottom sx={{ 
+                color: 'primary.main', 
+                textAlign: 'center', 
+                fontSize: { xs: '1.1rem', md: '1.2rem' },
+                fontWeight: 'bold',
+                mb: 3,
+                mt: { xs: 3, md: 4 }
+              }}>
                 总体评分分布
               </Typography>
               <Box sx={{
                 width: '100%',
-                height: { xs: 220, sm: 240, md: 260 },
+                height: { xs: 260, sm: 280, md: 300 },
                 position: 'relative',
-                mb: 2,
+                mb: 4,
                 display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center'
+                alignItems: 'center',
+                '@media print': {
+                  height: 300,
+                  overflow: 'visible'
+                }
               }}>
                 <RadarChart
-                  width={window.innerWidth < 600 ? 220 : 400}
-                  height={window.innerWidth < 600 ? 200 : 240}
+                  width={500}
+                  height={300}
                   data={getRadarData()}
-                  style={{ maxWidth: '100%' }}
+                  style={{ maxWidth: '100%', width: '100%', height: '100%' }}
                 >
                   <PolarGrid stroke="#e0e0e0" />
                   <PolarAngleAxis
@@ -643,6 +744,45 @@ function App() {
                   <Legend wrapperStyle={{ fontSize: window.innerWidth < 600 ? 10 : 12 }} />
                 </RadarChart>
               </Box>
+              <Paper elevation={2} sx={{ 
+                mt: 4, 
+                p: 3, 
+                borderRadius: 2,
+                backgroundColor: 'white',
+                maxWidth: '100%',
+                mx: 'auto',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <Typography variant="subtitle1" sx={{ 
+                  fontWeight: 'bold', 
+                  mb: 2, 
+                  color: 'primary.main', 
+                  textAlign: 'center',
+                  fontSize: '1rem'
+                }}>
+                  评分等级说明
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, md: 2 } }}>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#FF1493' }}>SSS</Box> = 非常喜欢
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#FF69B4' }}>SS</Box> = 喜欢
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#87CEEB' }}>S</Box> = 接受
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#FFD700' }}>Q</Box> = 不喜欢但会做
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#FF4500' }}>N</Box> = 拒绝
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', color: '#808080' }}>W</Box> = 未知
+                  </Typography>
+                </Box>
+              </Paper>
             </Box>
             {Object.entries(CATEGORIES).map(([category, items]) => (
               <Box key={category} sx={{ mb: 2, maxWidth: '100%' }}>
@@ -657,7 +797,13 @@ function App() {
                   {category}
                 </Typography>
                 <Grid container spacing={1.5} justifyContent="center">
-                  {items.filter(item => getRating(category, item)).map(item => (
+                  {items
+                    .filter(item => getRating(category, item))
+                    .sort((a, b) => {
+                      const ratingOrder = { 'SSS': 0, 'SS': 1, 'S': 2, 'Q': 3, 'N': 4, 'W': 5 };
+                      return ratingOrder[getRating(category, a)] - ratingOrder[getRating(category, b)];
+                    })
+                    .map(item => (
                     <Grid item xs={6} sm={4} key={item}>
                       <Paper elevation={1} sx={{
                         p: 1,
@@ -699,8 +845,31 @@ function App() {
                 </Grid>
               </Box>
             ))}
+            <Paper elevation={2} sx={{
+              p: 3,
+              borderRadius: 2,
+              textAlign: 'center',
+              maxWidth: 300,
+              mx: 'auto',
+              backgroundColor: 'white',
+              mt: 4
+            }}>
+              <Box component="img" src="/img/qrcode.png" alt="QR Code" sx={{
+                width: '200px',
+                height: '200px',
+                display: 'block',
+                margin: '0 auto'
+              }} />
+            </Paper>
           </DialogContent>
-          <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
+          <DialogActions sx={{ 
+            justifyContent: 'center', 
+            pb: 3, 
+            pt: 2,
+            gap: 2,
+            borderTop: '1px solid rgba(0,0,0,0.1)',
+            backgroundColor: 'white'
+          }}>
             <Button
               onClick={handleExportImage}
               variant="contained"
