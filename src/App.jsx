@@ -197,6 +197,24 @@ function App() {
         const clonedReport = reportElement.cloneNode(true);
         container.appendChild(clonedReport);
 
+        // 修改导出图片的网格布局为每行4列
+        const optionsGrids = clonedReport.querySelectorAll('.options-grid');
+        optionsGrids.forEach(grid => {
+          grid.style.display = 'grid';
+          grid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+          grid.style.gap = '0.5rem';
+          grid.style.width = '100%';
+          grid.style.margin = '0 auto';
+          // 确保每个选项有足够的空间
+          const optionItems = grid.querySelectorAll('.option-item');
+          optionItems.forEach(item => {
+            item.style.minWidth = '0';
+            item.style.flexWrap = 'nowrap';
+            item.style.overflow = 'hidden';
+            item.style.fontSize = '0.9em';
+          });
+        });
+
         // 预处理克隆的元素
         const dialogElement = clonedReport.querySelector('[role="dialog"]');
         if (dialogElement) {
