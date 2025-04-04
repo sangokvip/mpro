@@ -9,6 +9,7 @@ import InfoIcon from '@mui/icons-material/Info'
 import HelpIcon from '@mui/icons-material/Help'
 import MenuIcon from '@mui/icons-material/Menu'
 import AutorenewIcon from '@mui/icons-material/Autorenew'
+import CloseIcon from '@mui/icons-material/Close'
 
 const RATING_OPTIONS = ['SSS', 'SS', 'S', 'Q', 'N', 'W']
 const CATEGORIES = {
@@ -101,17 +102,6 @@ const theme = createTheme({
         },
       },
     },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          '@media (max-width: 600px)': {  // 移动端样式
-            margin: '8px',
-            width: 'calc(100% - 16px)',
-            maxHeight: '90vh !important'
-          }
-        }
-      }
-    }
   },
 })
 
@@ -189,59 +179,57 @@ function App() {
     }))
   }
 
- // 新增的移动端检测函数（放在组件顶部，App函数内部）
-const detectMobileOS = () => {
-  const ua = navigator.userAgent;
-  return {
-    isIOS: /iPhone|iPad|iPod/i.test(ua),
-    isAndroid: /Android/i.test(ua),
-    isWeChat: /MicroMessenger/i.test(ua)
-  };
-};
-
-// 新增的微信预览函数（放在detectMobileOS下方）
-const createWeChatPreview = (imgUrl) => {
-  // ...保持之前提供的createWeChatPreview函数内容不变...
-};
-
-// 替换后的handleExportImage函数
-const handleExportImage = async () => {
-  if (!reportRef.current) return;
-
-  try {
-    setSnackbarMessage('正在生成高清图片，请稍候...');
-    setSnackbarOpen(true);
-    
-    const canvas = await html2canvas(reportRef.current, {
-      scale: window.devicePixelRatio * 3,
-      useCORS: true,
-      logging: true,
-      backgroundColor: "#ffffff",
-      onclone: (clonedDoc) => {
-        clonedDoc.body.style.fontSize = '16px';
-        clonedDoc.body.style.webkitTextSizeAdjust = '100%';
+  const handleExportImage = async () => {
+    if (reportRef.current) {
+      try {
+        const canvas = await html2canvas(reportRef.current, {
+          scrollY: -window.scrollY,
+          windowWidth: reportRef.current.scrollWidth,
+          windowHeight: reportRef.current.scrollHeight,
+          scale: window.devicePixelRatio * 2.5,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          imageTimeout: 0,
+          onclone: (clonedDoc) => {
+            const element = clonedDoc.querySelector('[role="dialog"]');
+            if (element) {
+              element.style.transform = 'none';
+            }
+          }
+        })
+        const image = canvas.toDataURL('image/png', 1.0)
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          const blob = await (await fetch(image)).blob()
+          if (navigator.share) {
+            await navigator.share({
+              files: [new File([blob], '女M自评报告.png', { type: 'image/png' })]
+            })
+            setSnackbarMessage('图片已准备好分享！')
+          } else {
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = '女M自评报告.png'
+            link.click()
+            URL.revokeObjectURL(link.href)
+            setSnackbarMessage('报告已保存为高清图片！')
+          }
+        } else {
+          const link = document.createElement('a')
+          link.href = image
+          link.download = '女M自评报告.png'
+          link.click()
+          setSnackbarMessage('报告已保存为高清图片！')
+        }
+        setSnackbarOpen(true)
+      } catch (error) {
+        console.error('导出图片错误:', error)
+        setSnackbarMessage('导出图片失败，请重试')
+        setSnackbarOpen(true)
       }
-    });
-    
-    canvas.toBlob(async (blob) => {
-      const { isIOS, isAndroid, isWeChat } = detectMobileOS();
-      
-      if (isWeChat) {
-        const imgUrl = canvas.toDataURL();
-        createWeChatPreview(imgUrl);
-        return;
-      }
-    
-      // ...保持之前提供的完整toBlob回调内容...
-    }, 'image/png');
-
-  } catch (error) {
-    console.error('导出失败:', error);
-    setSnackbarMessage(`保存失败: ${error.message || '未知错误'}`);
-  } finally {
-    setSnackbarOpen(true);
+    }
   }
-};
 
   const handleExportPDF = async () => {
     if (reportRef.current) {
@@ -300,30 +288,43 @@ const handleExportImage = async () => {
         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
       }}>
         <Container maxWidth="lg">
-          <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Typography variant="h5" sx={{
-              fontWeight: 'bold',
-              color: 'white',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
-              display: 'flex',
+          <Toolbar sx={{ 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: { xs: '8px 16px', md: '8px 24px' },
+            minHeight: { xs: '56px', md: '64px' }
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
               alignItems: 'center',
-              gap: 1
+              gap: 1,
+              flex: '1 1 auto',
+              justifyContent: 'flex-start',
+              height: '100%'
             }}>
-              <ScienceIcon /> M-Profile Lab
-            </Typography>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
+              <ScienceIcon sx={{ display: 'flex' }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                margin: 0,
+                padding: 0,
+                lineHeight: 1,
+                height: '100%'
+              }}>
+                M-Profile Lab
+              </Typography>
+            </Box>
+                
+            <Box sx={{ 
+              display: { xs: 'none', md: 'flex' }, 
+              gap: 2,
+              flex: '1 1 auto',
+              justifyContent: 'flex-end'
+            }}>              <Button
                 color="inherit"
-                size="large"
                 startIcon={<AutorenewIcon />}
-                sx={{
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.2)'
-                  },
-                  display: { xs: 'none', md: 'flex' }
-                }}
                 onClick={() => {
                   const newRatings = {};
                   Object.entries(CATEGORIES).forEach(([category, items]) => {
@@ -339,14 +340,11 @@ const handleExportImage = async () => {
               >
                 随机选择
               </Button>
-    
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-                <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
-                <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
-                <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
-              </Box>
+              <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
+              <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
+              <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
             </Box>
-    
+
             <IconButton
               color="inherit"
               sx={{ display: { xs: 'block', md: 'none' } }}
@@ -357,7 +355,7 @@ const handleExportImage = async () => {
           </Toolbar>
         </Container>
       </AppBar>
-    
+
       <Drawer
         anchor="right"
         open={mobileMenuOpen}
@@ -396,7 +394,7 @@ const handleExportImage = async () => {
           </List>
         </Box>
       </Drawer>
-    
+
       <Container maxWidth="lg" sx={{
         py: 8,
         minHeight: '100vh',
@@ -413,9 +411,38 @@ const handleExportImage = async () => {
           <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
             女M自评报告
           </Typography>
-          <Typography variant="subtitle1" sx={{ mt: 2 }}>
-            SSS=非常喜欢，SS=喜欢，S=接受，Q=不喜欢但会做，N=拒绝，W=未知
-          </Typography>
+          <Paper elevation={1} sx={{ 
+            mt: 2, 
+            p: 2, 
+            borderRadius: 2,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            maxWidth: { xs: '100%', md: '80%' },
+            mx: 'auto'
+          }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main', textAlign: 'center' }}>
+              评分等级说明
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 1, md: 2 } }}>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#FF1493' }}>SSS</Box> = 非常喜欢
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#FF69B4' }}>SS</Box> = 喜欢
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#87CEEB' }}>S</Box> = 接受
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#FFD700' }}>Q</Box> = 不喜欢但会做
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#FF4500' }}>N</Box> = 拒绝
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>
+                <Box component="span" sx={{ fontWeight: 'bold', color: '#808080' }}>W</Box> = 未知
+              </Typography>
+            </Box>
+          </Paper>
         </Box>
         
         {Object.entries(CATEGORIES).map(([category, items]) => (
@@ -503,7 +530,7 @@ const handleExportImage = async () => {
             </Grid>
           </Paper>
         ))}
-    
+
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Button
             variant="contained"
@@ -515,7 +542,7 @@ const handleExportImage = async () => {
             生成报告
           </Button>
         </Box>
-    
+
         <Dialog
           open={openReport}
           onClose={() => setOpenReport(false)}
@@ -577,31 +604,54 @@ const handleExportImage = async () => {
                 }
                 return acc
               }, {})
-    
+
               return (
                 <Box key={category} sx={{ mb: 4, maxWidth: '100%' }}>
-                  <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', textAlign: 'center' }}>
+                  <Typography variant="h6" gutterBottom sx={{ 
+                    color: 'primary.main', 
+                    textAlign: 'center',
+                    borderBottom: '2px solid #6200ea',
+                    pb: 1,
+                    mb: 2
+                  }}>
                     {category}
                   </Typography>
-                  <TableContainer component={Paper} sx={{ mt: 2 }}>
+                  <TableContainer component={Paper} sx={{ 
+                    mt: 2,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    borderRadius: 2
+                  }}>
                     <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold', width: '100px' }}>评分</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold' }}>项目</TableCell>
-                        </TableRow>
-                      </TableHead>
                       <TableBody>
-                        {Object.entries(ratingGroups).map(([rating, items]) => (
-                          <TableRow key={rating}>
-                            <TableCell sx={{ color: getRatingColor(rating), fontWeight: 'bold' }}>
-                              {rating}
-                            </TableCell>
-                            <TableCell>
-                              {items.join('、')}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {RATING_OPTIONS.map(rating => {
+                          if (!ratingGroups[rating]) return null;
+                          return (
+                            <TableRow key={rating} sx={{
+                              backgroundColor: `${getRatingColor(rating)}10`,
+                              '&:hover': {
+                                backgroundColor: `${getRatingColor(rating)}20`
+                              }
+                            }}>
+                              <TableCell 
+                                sx={{ 
+                                  color: getRatingColor(rating), 
+                                  fontWeight: 'bold',
+                                  width: '100px',
+                                  borderLeft: `4px solid ${getRatingColor(rating)}`
+                                }}
+                              >
+                                {rating}
+                              </TableCell>
+                              <TableCell sx={{ 
+                                color: 'text.primary',
+                                fontSize: '0.95rem',
+                                lineHeight: 1.5
+                              }}>
+                                {ratingGroups[rating].join('、')}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </TableContainer>
@@ -644,7 +694,7 @@ const handleExportImage = async () => {
                     ))}
                   </Grid>
                 </Box>
-              )
+              );
             })}
           </DialogContent>
           <DialogActions sx={{ justifyContent: 'center', pb: 3, gap: 2 }}>
@@ -652,10 +702,8 @@ const handleExportImage = async () => {
               onClick={handleExportImage}
               variant="contained"
               color="primary"
-              disabled={snackbarOpen} // 新增的禁用状态
             >
-               {/* 修改后的动态文字显示 */}
-               {snackbarOpen ? '生成中...' : '保存为图片'}
+              保存为图片
             </Button>
             <Button
               onClick={handleExportPDF}
@@ -666,13 +714,21 @@ const handleExportImage = async () => {
             </Button>
             <Button
               onClick={handleShareToWeChat}
-              variant="contained"color="info"
+              variant="contained" color="info"
             >
               分享到微信
             </Button>
+            <Button
+              onClick={() => setOpenReport(false)}
+              variant="outlined"
+              color="error"
+              startIcon={<CloseIcon />}
+            >
+              关闭报告
+            </Button>
           </DialogActions>
         </Dialog>
-    
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}
