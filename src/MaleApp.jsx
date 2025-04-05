@@ -3,13 +3,16 @@ import { Container, Typography, Paper, Grid, Box, Select, MenuItem, Button, Dial
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import html2canvas from 'html2canvas'
 import html2pdf from 'html2pdf.js'
-import AssessmentIcon from '@mui/icons-material/Assessment'
+import ScienceIcon from '@mui/icons-material/Science'
 import HomeIcon from '@mui/icons-material/Home'
 import InfoIcon from '@mui/icons-material/Info'
 import HelpIcon from '@mui/icons-material/Help'
 import MenuIcon from '@mui/icons-material/Menu'
 import AutorenewIcon from '@mui/icons-material/Autorenew'
 import CloseIcon from '@mui/icons-material/Close'
+import AssessmentIcon from '@mui/icons-material/Assessment'
+import MaleIcon from '@mui/icons-material/Male'
+import FemaleIcon from '@mui/icons-material/Female'
 
 const RATING_OPTIONS = ['SSS', 'SS', 'S', 'Q', 'N', 'W']
 const CATEGORIES = {
@@ -27,53 +30,56 @@ const CATEGORIES = {
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#FF4081',
-      light: '#FF80AB',
-      dark: '#F50057',
+      main: '#0D47A1',
+      light: '#1976D2',
+      dark: '#002171',
     },
     secondary: {
-      main: '#7C4DFF',
-      light: '#B388FF',
-      dark: '#651FFF',
+      main: '#1E88E5',
+      light: '#42A5F5',
+      dark: '#1565C0',
     },
     background: {
-      default: '#FAFAFA',
+      default: '#F5F7FA',
       paper: '#FFFFFF',
     },
     text: {
-      primary: '#212121',
-      secondary: '#757575',
+      primary: '#0D47A1',
+      secondary: '#1976D2',
     },
   },
   typography: {
     h3: {
       fontWeight: 700,
       letterSpacing: '-0.5px',
-      color: '#1565C0',
-      marginBottom: '1.5rem',
+      color: '#0D47A1',
+      marginBottom: '2rem',
+      fontSize: '2.5rem',
     },
     subtitle1: {
-      color: '#3F51B5',
-      fontSize: '1.1rem',
+      color: '#1976D2',
+      fontSize: '1.2rem',
       lineHeight: 1.8,
-      marginBottom: '2rem',
+      marginBottom: '2.5rem',
     },
     h5: {
       fontWeight: 600,
-      color: '#1976D2',
-      marginBottom: '1rem',
+      color: '#0D47A1',
+      marginBottom: '1.5rem',
+      fontSize: '1.8rem',
     },
   },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: '12px',
-          boxShadow: '0 8px 16px rgba(25, 118, 210, 0.1)',
+          borderRadius: '16px',
+          boxShadow: '0 10px 20px rgba(13, 71, 161, 0.1)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          padding: '2rem',
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '0 12px 24px rgba(25, 118, 210, 0.15)',
+            boxShadow: '0 15px 30px rgba(13, 71, 161, 0.15)',
           },
         },
       },
@@ -81,21 +87,22 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
+          borderRadius: '12px',
           textTransform: 'none',
           fontWeight: 600,
-          padding: '10px 24px',
+          padding: '12px 28px',
+          fontSize: '1.1rem',
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: '0 6px 12px rgba(25, 118, 210, 0.2)',
+            boxShadow: '0 8px 16px rgba(13, 71, 161, 0.2)',
           },
         },
         contained: {
-          background: 'linear-gradient(45deg, #1976D2 30%, #2196F3 90%)',
+          background: 'linear-gradient(45deg, #0D47A1 30%, #1976D2 90%)',
           color: 'white',
           '&:hover': {
-            background: 'linear-gradient(45deg, #1565C0 30%, #1976D2 90%)',
+            background: 'linear-gradient(45deg, #002171 30%, #0D47A1 90%)',
           },
         },
       },
@@ -103,10 +110,12 @@ const theme = createTheme({
     MuiSelect: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
+          borderRadius: '12px',
           backgroundColor: '#FFFFFF',
+          fontSize: '1.1rem',
+          padding: '12px',
           '&:hover': {
-            backgroundColor: '#F5F5F5',
+            backgroundColor: '#F5F7FA',
           },
         },
       },
@@ -121,26 +130,7 @@ function MaleApp() {
   const [snackbarMessage, setSnackbarMessage] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedBatchRating, setSelectedBatchRating] = useState('')
-  const [activeCategory, setActiveCategory] = useState(Object.keys(CATEGORIES)[0])
   const reportRef = useRef(null)
-
-  const groupRatingsByLevel = (category) => {
-    const items = CATEGORIES[category]
-    const groups = {
-      SSS: [], SS: [], S: [], Q: [], N: [], W: [], unrated: []
-    }
-    
-    items.forEach(item => {
-      const rating = getRating(category, item)
-      if (rating) {
-        groups[rating].push(item)
-      } else {
-        groups.unrated.push(item)
-      }
-    })
-    
-    return groups
-  }
 
   const handleRatingChange = (category, item, value) => {
     setRatings(prev => ({
@@ -155,13 +145,13 @@ function MaleApp() {
 
   const getRatingColor = (rating) => {
     switch(rating) {
-      case 'SSS': return '#FF4081'
-      case 'SS': return '#7C4DFF'
-      case 'S': return '#448AFF'
-      case 'Q': return '#00BCD4'
-      case 'N': return '#4CAF50'
-      case 'W': return '#FF9800'
-      default: return '#F5F5F5'
+      case 'SSS': return '#E91E63' // 粉色
+      case 'SS': return '#9C27B0'  // 紫色
+      case 'S': return '#4CAF50'   // 绿色
+      case 'Q': return '#FFA000'   // 琥珀色
+      case 'N': return '#FF5722'   // 橙红色
+      case 'W': return '#757575'   // 深灰色
+      default: return '#F5F5F5'    // 浅灰色背景
     }
   }
 
@@ -210,29 +200,199 @@ function MaleApp() {
   const handleExportImage = async () => {
     if (reportRef.current) {
       try {
-        const canvas = await html2canvas(reportRef.current, {
-          scale: 2, // 提高图片质量
-          useCORS: true, // 允许跨域图片
+        const reportElement = reportRef.current;
+        
+        // 创建一个新的容器元素
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '-9999px';
+        container.style.width = '1200px'; // 固定宽度以确保一致的布局
+        container.style.backgroundColor = '#ffffff';
+        document.body.appendChild(container);
+
+        // 克隆报告元素
+        const clonedReport = reportElement.cloneNode(true);
+        container.appendChild(clonedReport);
+
+        // 修改导出图片的网格布局为每行3列
+        const optionsGrids = clonedReport.querySelectorAll('.options-grid');
+        optionsGrids.forEach(grid => {
+          grid.style.display = 'grid';
+          grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+          grid.style.gap = '1rem';
+          grid.style.width = '100%';
+          grid.style.margin = '0 auto';
+          // 确保每个选项有足够的空间
+          const optionItems = grid.querySelectorAll('.option-item');
+          optionItems.forEach(item => {
+            item.style.minWidth = '0';
+            item.style.flexWrap = 'nowrap';
+            item.style.overflow = 'hidden';
+            item.style.fontSize = '1.8em';
+            // 增大评分等级说明的字体
+            const ratingText = item.querySelector('.rating-text');
+            if (ratingText) {
+              ratingText.style.fontSize = '1.6em';
+            }
+          });
+        });
+
+        // 预处理克隆的元素
+        const dialogElement = clonedReport.querySelector('[role="dialog"]');
+        if (dialogElement) {
+          dialogElement.style.position = 'relative';
+          dialogElement.style.transform = 'none';
+          dialogElement.style.top = '0';
+          dialogElement.style.left = '0';
+          dialogElement.style.width = '100%';
+          dialogElement.style.height = 'auto';
+          dialogElement.style.maxHeight = 'none';
+          dialogElement.style.overflow = 'visible';
+          dialogElement.style.display = 'block';
+          dialogElement.style.margin = '0';
+          dialogElement.style.padding = '2rem';
+          dialogElement.style.boxSizing = 'border-box';
+
+          // 增大标题字体
+          const titles = dialogElement.querySelectorAll('.section-title');
+          titles.forEach(title => {
+            title.style.fontSize = '2.2em';
+          });
+
+          // 增大图表字体
+          const charts = dialogElement.querySelectorAll('.recharts-text');
+          charts.forEach(text => {
+            text.style.fontSize = '1.6em';
+          });
+        }
+
+        // 确保所有图表都已渲染
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // 预加载二维码图片并设置属性
+        await new Promise((resolve) => {
+          const qrCodeImg = reportElement.querySelector('img[alt="QR Code"]');
+          if (qrCodeImg) {
+            qrCodeImg.crossOrigin = 'anonymous';
+            qrCodeImg.style.position = 'absolute';
+            qrCodeImg.style.bottom = '20px';
+            qrCodeImg.style.right = '20px';
+            qrCodeImg.style.width = '120px';
+            qrCodeImg.style.height = '120px';
+            qrCodeImg.style.borderRadius = '12px';
+            qrCodeImg.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+            qrCodeImg.style.zIndex = '1000';
+            qrCodeImg.style.backgroundColor = '#ffffff';
+            qrCodeImg.style.objectFit = 'contain';
+            qrCodeImg.style.display = 'block';
+            
+            const newImg = new Image();
+            newImg.crossOrigin = 'anonymous';
+            newImg.onload = () => {
+              qrCodeImg.src = newImg.src;
+              resolve();
+            };
+            newImg.onerror = resolve;
+            newImg.src = qrCodeImg.src;
+          } else {
+            resolve();
+          }
+        });
+
+        const canvas = await html2canvas(container, {
+          scale: 2,
+          useCORS: true,
           allowTaint: true,
-          backgroundColor: '#FFFFFF',
-          windowWidth: reportRef.current.scrollWidth,
-          windowHeight: reportRef.current.scrollHeight,
           logging: false,
+          backgroundColor: '#ffffff',
+          imageTimeout: 30000,
           onclone: (clonedDoc) => {
-            const element = clonedDoc.querySelector('[role="dialog"]');
-            if (element) {
-              element.style.transform = 'none';
-              element.style.maxHeight = 'none';
+            const charts = clonedDoc.querySelectorAll('.recharts-wrapper');
+            charts.forEach(chart => {
+              chart.style.width = '100%';
+              chart.style.height = 'auto';
+            });
+            // 确保二维码图片正确显示
+            const qrCodeImg = clonedDoc.querySelector('img[alt="QR Code"]');
+            if (qrCodeImg) {
+              qrCodeImg.crossOrigin = 'anonymous';
+              qrCodeImg.style.position = 'absolute';
+              qrCodeImg.style.bottom = '20px';
+              qrCodeImg.style.right = '20px';
+              qrCodeImg.style.width = '120px';
+              qrCodeImg.style.height = '120px';
+              qrCodeImg.style.borderRadius = '12px';
+              qrCodeImg.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+              qrCodeImg.style.zIndex = '1000';
+              qrCodeImg.style.backgroundColor = '#ffffff';
+              qrCodeImg.style.objectFit = 'contain';
+              qrCodeImg.style.display = 'block';
             }
           }
+        });
+
+        // 清理临时元素
+        document.body.removeChild(container);
+
+        // 将Canvas转换为Blob对象
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/png', 1.0)
         })
-        const url = canvas.toDataURL('image/png', 1.0)
-        const link = document.createElement('a')
-        link.download = '男M自评报告.png'
-        link.href = url
-        link.click()
-        setSnackbarMessage('报告已保存为图片！')
-        setSnackbarOpen(true)
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+
+        if (isMobile) {
+          try {
+            // 尝试使用Web Share API
+            if (navigator.share && navigator.canShare) {
+              const file = new File([blob], '男M自评报告.png', { type: 'image/png' })
+              const shareData = { files: [file] }
+              
+              if (navigator.canShare(shareData)) {
+                await navigator.share(shareData)
+                setSnackbarMessage('图片已准备好分享！')
+                setSnackbarOpen(true)
+                return
+              }
+            }
+
+            // 如果Web Share API不可用，尝试使用FileSaver API
+            if ('saveAs' in navigator) {
+              await navigator.saveAs(blob, '男M自评报告.png')
+              setSnackbarMessage('报告已保存到相册！')
+              setSnackbarOpen(true)
+              return
+            }
+
+            // 回退方案：使用传统的下载方法
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = '男M自评报告.png'
+            link.style.display = 'none'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+            setSnackbarMessage('报告已保存为高清图片！')
+            setSnackbarOpen(true)
+          } catch (error) {
+            console.error('保存图片错误:', error)
+            setSnackbarMessage('保存图片失败，请尝试使用系统自带的截图功能')
+            setSnackbarOpen(true)
+          }
+        } else {
+          // 桌面端使用传统下载方法
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = '男M自评报告.png'
+          link.click()
+          URL.revokeObjectURL(url)
+          setSnackbarMessage('报告已保存为高清图片！')
+          setSnackbarOpen(true)
+        }
       } catch (error) {
         console.error('导出图片错误:', error)
         setSnackbarMessage('导出图片失败，请重试')
@@ -264,37 +424,84 @@ function MaleApp() {
 
   return (
     <ThemeProvider theme={theme}>
+      <Box component="img" src="https://img.m-profile.top/img/qrcode.png" alt="QR Code" sx={{
+        position: 'fixed',
+        bottom: 20,
+        right: 20,
+        width: { xs: '100px', sm: '120px' },
+        height: { xs: '100px', sm: '120px' },
+        borderRadius: '12px',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+        transition: 'transform 0.3s ease-in-out',
+        zIndex: 1000,
+        '&:hover': {
+          transform: 'scale(1.05)'
+        }
+      }} />
+
+      <AppBar position="sticky" sx={{
+        background: 'linear-gradient(135deg, #6200ea 0%, #9d46ff 100%)',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      }}>
+
+        <Container maxWidth="lg">
+          <Toolbar sx={{ 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            padding: { xs: '8px 16px', md: '8px 24px' },
+            minHeight: { xs: '56px', md: '64px' }
+          }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: 1,
+              flex: '1 1 auto',
+              justifyContent: 'flex-start',
+              height: '100%'
+            }}>
+              <ScienceIcon sx={{ display: 'flex' }} />
+              <Typography variant="h5" sx={{
+                fontWeight: 'bold',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                margin: 0,
+                padding: 0,
+                lineHeight: 1,
+                height: '100%'
+              }}>
+                M-Profile Lab
+              </Typography>
+            </Box>
+                
+            <Box sx={{ 
+              display: { xs: 'none', md: 'flex' }, 
+              gap: 2,
+              flex: '1 1 auto',
+              justifyContent: 'flex-end'
+            }}>              
+              <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
+              <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
+              <Button color="inherit" startIcon={<HelpIcon />}>帮助</Button>
+              <Button color="inherit" startIcon={<MaleIcon />} href="/male.html">男性版</Button>
+              <Button color="inherit" startIcon={<FemaleIcon />} href="/female.html">女性版</Button>
+            </Box>
+
+            <IconButton
+              color="inherit"
+              sx={{ display: { xs: 'block', md: 'none' } }}
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Toolbar>
+        </Container>
+      </AppBar>
       <Box sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(120deg, #FFF8E1 0%, #FFECB3 100%)',
+        background: 'linear-gradient(120deg, #E3F2FD 0%, #BBDEFB 100%)',
       }}>
-        <AppBar position="sticky" color="transparent" elevation={0} sx={{
-          backdropFilter: 'blur(10px)',
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        }}>
-          <Container maxWidth="lg">
-            <Toolbar>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <AssessmentIcon sx={{ color: 'primary.main' }} />
-                <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600 }}>
-                  男M评测系统
-                </Typography>
-              </Box>
-              <Box sx={{ flexGrow: 1 }} />
-              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 2 }}>
-                <Button color="primary" startIcon={<HomeIcon />}>首页</Button>
-                <Button color="primary" startIcon={<InfoIcon />}>关于</Button>
-                <Button color="primary" startIcon={<HelpIcon />}>帮助</Button>
-              </Box>
-              <IconButton
-                sx={{ display: { xs: 'block', md: 'none' } }}
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Toolbar>
-          </Container>
-        </AppBar>
+  
 
         <Drawer
           anchor="right"
@@ -315,40 +522,20 @@ function MaleApp() {
                 <ListItemIcon><HelpIcon /></ListItemIcon>
                 <ListItemText primary="帮助" />
               </ListItem>
+              <ListItem button component="a" href="/male.html">
+                <ListItemIcon><MaleIcon /></ListItemIcon>
+                <ListItemText primary="男性版" />
+              </ListItem>
+              <ListItem button component="a" href="/female.html">
+                <ListItemIcon><FemaleIcon /></ListItemIcon>
+                <ListItemText primary="女性版" />
+              </ListItem>
             </List>
           </Box>
         </Drawer>
 
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 2, height: '100%', position: 'sticky', top: '80px' }}>
-                <Typography variant="h6" gutterBottom>类别选择</Typography>
-                <List>
-                  {Object.keys(CATEGORIES).map((category) => (
-                    <ListItem 
-                      button 
-                      key={category}
-                      selected={category === activeCategory}
-                      onClick={() => setActiveCategory(category)}
-                      sx={{
-                        borderRadius: 1,
-                        mb: 1,
-                        '&.Mui-selected': {
-                          backgroundColor: theme.palette.primary.light,
-                          color: 'white',
-                        }
-                      }}
-                    >
-                      <ListItemText primary={category} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            </Grid>
-            
-            <Grid item xs={12} md={9}>
-              <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
             <Typography variant="h3" gutterBottom sx={{
               background: 'linear-gradient(45deg, #1976D2 30%, #2196F3 90%)',
               WebkitBackgroundClip: 'text',
@@ -515,28 +702,22 @@ function MaleApp() {
         <Dialog
           open={openReport}
           onClose={() => setOpenReport(false)}
-          maxWidth="lg"
+          maxWidth="md"
           fullWidth
           PaperProps={{
             sx: {
               maxHeight: '90vh',
               overflowY: 'auto',
-              margin: '16px',
-              borderRadius: '12px',
               '@media print': {
                 maxHeight: 'none',
                 overflow: 'visible'
-              },
-              '@media (max-width: 600px)': {
-                margin: '8px',
-                maxHeight: '95vh'
               }
             }
           }}
         >
-          <DialogTitle sx={{ borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+          <DialogTitle>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>男M自评报告</Typography>
+              <Typography variant="h6">评测报告</Typography>
               <IconButton onClick={() => setOpenReport(false)}>
                 <CloseIcon />
               </IconButton>
@@ -544,169 +725,124 @@ function MaleApp() {
           </DialogTitle>
           <DialogContent dividers ref={reportRef}>
             <Box sx={{ p: 4, backgroundColor: '#FFFFFF' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                <Box component="img" src="https://img.m-profile.top/img/qrcode.png" alt="QR Code" sx={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  marginBottom: '20px'
+                }} />
+              </Box>
               <Typography variant="h4" gutterBottom align="center" sx={{
-                background: 'linear-gradient(45deg, #FF4081 30%, #F50057 90%)',
+                background: 'linear-gradient(45deg, #0D47A1 30%, #1976D2 90%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                fontWeight: 800,
-                letterSpacing: '1px',
-                marginBottom: '2.5rem',
-                fontSize: '2.5rem'
+                fontWeight: 900,
+                letterSpacing: '2px',
+                marginBottom: '3rem',
+                fontSize: '3rem',
+                textShadow: '0 2px 4px rgba(13, 71, 161, 0.1)',
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: '-10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '100px',
+                  height: '4px',
+                  background: 'linear-gradient(90deg, #0D47A1, #1976D2)',
+                  borderRadius: '2px'
+                }
               }}>
                 男M倾向分析报告
               </Typography>
-              <Box sx={{ mb: 6 }}>
-                <Typography variant="h5" gutterBottom sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-                  总体评分分布
-                </Typography>
-                <Grid container spacing={4}>
-                  <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
-                      <Typography variant="h6" gutterBottom>雷达图分析</Typography>
-                      <ResponsiveContainer width="100%" height={400}>
-                        <RadarChart data={getRadarData()}>
-                          <PolarGrid stroke="rgba(25, 118, 210, 0.2)" />
-                          <PolarAngleAxis 
-                            dataKey="category" 
-                            tick={{ 
-                              fill: theme.palette.primary.main, 
-                              fontSize: 14,
-                              fontWeight: 500 
-                            }} 
-                          />
-                          <PolarRadiusAxis 
-                            angle={30} 
-                            domain={[0, 6]} 
-                            tick={{ 
-                              fill: theme.palette.primary.main,
-                              fontSize: 12 
-                            }} 
-                          />
-                          <Radar 
-                            name="评分" 
-                            dataKey="value" 
-                            stroke={theme.palette.primary.main} 
-                            fill={theme.palette.primary.main} 
-                            fillOpacity={0.4} 
-                          />
-                          <Tooltip />
-                          <Legend />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Paper sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
-                      <Typography variant="h6" gutterBottom>评分等级说明</Typography>
-                      <TableContainer sx={{ flex: 1, overflowY: 'auto', maxHeight: { xs: '300px', md: 'none' }, mt: 2 }}>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>等级</TableCell>
-                              <TableCell>说明</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {RATING_OPTIONS.map((rating) => (
-                              <TableRow key={rating}>
-                                <TableCell>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box
-                                      sx={{
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: '50%',
-                                        backgroundColor: getRatingColor(rating)
-                                      }}
-                                    />
-                                    {rating}
-                                  </Box>
-                                </TableCell>
-                                <TableCell>{{
-                                  'SSS': '极度渴望，无法抗拒',
-                                  'SS': '非常喜欢，主动追求',
-                                  'S': '比较喜欢，愿意尝试',
-                                  'Q': '稍有兴趣，可以接受',
-                                  'N': '无感，但不反感',
-                                  'W': '完全不能接受'
-                                }[rating]}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </Paper>
-                  </Grid>
-                </Grid>
+              <Box sx={{ mb: 8, display: 'flex', justifyContent: 'center' }}>
+                <RadarChart width={700} height={500} data={getRadarData()} style={{ margin: '0 auto' }}>
+                  <PolarGrid stroke="#1976D2" strokeWidth={1} />
+                  <PolarAngleAxis dataKey="category" tick={{ fill: '#0D47A1', fontSize: 16, fontWeight: 600 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 6]} tick={{ fill: '#1976D2' }} />
+                  <Radar name="评分" dataKey="value" stroke="#0D47A1" fill="#1976D2" fillOpacity={0.4} strokeWidth={2} />
+                </RadarChart>
               </Box>
               <Box sx={{ mb: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <Typography variant="h5" sx={{ mb: 3, color: theme.palette.primary.main, fontWeight: 600 }}>
-                  详细评分分析
-                </Typography>
                 {Object.entries(CATEGORIES).map(([category, items]) => {
-                  const ratingGroups = groupRatingsByLevel(category);
+                  // 按评分对项目进行分组
+                  const groupedItems = items.reduce((acc, item) => {
+                    const rating = getRating(category, item);
+                    if (!acc[rating]) acc[rating] = [];
+                    acc[rating].push(item);
+                    return acc;
+                  }, {});
+
                   return (
-                    <Box key={category} sx={{ backgroundColor: '#F8F9FA', borderRadius: '16px', p: 3 }}>
-                      <Typography variant="h6" gutterBottom sx={{
-                        color: theme.palette.primary.dark,
-                        fontWeight: 600,
+                    <Box key={category} sx={{ backgroundColor: '#F8F9FA', borderRadius: '16px', p: 3, mb: 4 }}>
+                      <Typography variant="h5" gutterBottom sx={{
+                        color: '#1565C0',
+                        fontWeight: 700,
+                        fontSize: '1.5rem',
+                        mb: 3,
                         display: 'flex',
                         alignItems: 'center',
                         '&::before': {
                           content: '""',
                           width: '4px',
                           height: '24px',
-                          backgroundColor: theme.palette.primary.main,
+                          backgroundColor: '#1976D2',
                           marginRight: '12px',
                           borderRadius: '2px'
                         }
                       }}>
                         {category}
                       </Typography>
-                      {Object.entries(ratingGroups).map(([level, items]) => {
+                      {RATING_OPTIONS.map(rating => {
+                        const items = groupedItems[rating] || [];
                         if (items.length === 0) return null;
+
                         return (
-                          <Box key={level} sx={{ mt: 2 }}>
-                            <Typography 
-                              variant="subtitle1" 
-                              sx={{ 
-                                mb: 1,
-                                color: level !== 'unrated' ? getRatingColor(level) : 'text.secondary',
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                              }}
-                            >
-                              {level === 'unrated' ? '未评分项目' : `${level} 级项目`}
-                              <Box 
-                                sx={{ 
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: level !== 'unrated' ? getRatingColor(level) : 'text.secondary'
-                                }} 
-                              />
+                          <Box key={rating} sx={{ mb: 3 }}>
+                            <Typography variant="h6" sx={{
+                              color: '#1976D2',
+                              fontSize: '1.2rem',
+                              fontWeight: 600,
+                              mb: 2,
+                              pl: 2,
+                              borderLeft: `4px solid ${getRatingColor(rating)}`
+                            }}>
+                              {rating}
                             </Typography>
-                            <Grid container spacing={2}>
+                            <Grid container spacing={1}>
                               {items.map((item) => (
-                                <Grid item xs={12} sm={6} md={4} key={item}>
+                                <Grid item xs={6} sm={4} md={3} key={item}>
                                   <Paper
-                                    elevation={1}
+                                    elevation={2}
                                     sx={{
-                                      p: 2,
-                                      backgroundColor: level !== 'unrated' ? `${getRatingColor(level)}10` : 'background.paper',
-                                      border: '1px solid',
-                                      borderColor: level !== 'unrated' ? getRatingColor(level) : 'divider',
+                                      p: 1.5,
+                                      backgroundColor: getRatingColor(rating),
                                       borderRadius: '8px',
-                                      transition: 'all 0.3s ease',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      minHeight: '40px',
+                                      transition: 'all 0.2s ease',
                                       '&:hover': {
                                         transform: 'translateY(-2px)',
-                                        boxShadow: `0 4px 12px ${level !== 'unrated' ? getRatingColor(level) + '40' : 'rgba(0,0,0,0.1)'}`,
+                                        boxShadow: '0 4px 8px rgba(13, 71, 161, 0.15)'
                                       }
                                     }}
                                   >
-                                    <Typography variant="body2">{item}</Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        color: rating ? '#0D47A1' : '#1976D2',
+                                        textAlign: 'center'
+                                      }}
+                                    >
+                                      {item}
+                                    </Typography>
                                   </Paper>
                                 </Grid>
                               ))}
