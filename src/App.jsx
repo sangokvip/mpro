@@ -434,6 +434,7 @@ function App() {
               <Button color="inherit" startIcon={<HomeIcon />}>首页</Button>
               <Button color="inherit" startIcon={<InfoIcon />}>关于</Button>
               <Button color="inherit" startIcon={<HelpIcon />}>使用指南</Button>
+              <Button color="inherit" href="/male.html">男性版</Button>
             </Box>
 
             <IconButton
@@ -481,6 +482,9 @@ function App() {
             <ListItem button onClick={() => setMobileMenuOpen(false)}>
               <ListItemIcon><HelpIcon /></ListItemIcon>
               <ListItemText primary="使用指南" />
+            </ListItem>
+            <ListItem button component="a" href="/male.html">
+              <ListItemText primary="男性版" />
             </ListItem>
           </List>
         </Box>
@@ -685,7 +689,7 @@ function App() {
             }}>
               扫码领取您的XP报告
             </Typography>
-            <Box component="img" src="https://raw.githubusercontent.com/m-profile/mproimg/refs/heads/main/qrcode.png" alt="QR Code" sx={{
+            <Box component="img" src="https://img.m-profile.top/img/qrcode.png" alt="QR Code" sx={{
               width: '200px',
               height: '200px',
               display: 'block',
@@ -894,7 +898,7 @@ function App() {
               backgroundColor: 'white',
               mt: 4
             }}>
-              <Box component="img" src="https://raw.githubusercontent.com/m-profile/mproimg/refs/heads/main/qrcode.png" alt="QR Code" sx={{
+              <Box component="img" src="https://img.m-profile.top/img/qrcode.png" alt="QR Code" sx={{
                 width: '200px',
                 height: '200px',
                 display: 'block',
